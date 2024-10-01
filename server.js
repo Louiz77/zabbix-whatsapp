@@ -1,11 +1,15 @@
 const express = require('express');
-const { createSession, getSession } = require('./baileys_service');
+const { createSession, getSession, loadAllSessions } = require('./baileys_service');
 
 const app = express();
 const port = 7000;
 
-// Middleware para processar JSON
 app.use(express.json());
+
+// Carregar todas as sessões salvas ao iniciar o servidor
+loadAllSessions().then(() => {
+    console.log('Todas as sessões salvas foram carregadas.');
+});
 
 // Endpoint para criar sessão
 app.post('/create-session', async (req, res) => {
@@ -14,7 +18,6 @@ app.post('/create-session', async (req, res) => {
     try {
         await createSession(sessionId);
         res.status(200).send(`Sessão '${sessionId}' criada. Escaneie o QR Code no terminal.`);
-        
     } catch (error) {
         console.error("Erro ao criar sessão:", error);
         res.status(500).send('Erro ao criar sessão');
@@ -31,12 +34,10 @@ app.post('/send-message', async (req, res) => {
     }
 
     try {
-        // Verificar se o "to" está em um formato válido
         if (!to || !message) {
             return res.status(400).send('O campo "to" e "message" são obrigatórios');
         }
 
-        // Enviar a mensagem para um grupo ou número
         await session.sendMessage(to, { text: message });
         res.status(200).send('Mensagem enviada com sucesso!');
     } catch (error) {
@@ -45,8 +46,6 @@ app.post('/send-message', async (req, res) => {
     }
 });
 
-
-// Iniciar servidor
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
